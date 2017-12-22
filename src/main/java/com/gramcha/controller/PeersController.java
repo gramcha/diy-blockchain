@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gramcha.entities.Peer;
 import com.gramcha.entities.PeerList;
-import com.gramcha.entities.Transaction;
 import com.gramcha.service.PeerService;
 
 @RestController
@@ -21,12 +20,16 @@ public class PeersController {
 	@Autowired
 	PeerService peerService;
 	@RequestMapping(value="/peers")
-	public ResponseEntity<PeerList> getBlockChain() throws Exception{		
+	public ResponseEntity<PeerList> getPeerList() throws Exception{		
 		return ResponseEntity.ok(peerService.getPeerList());
 	}
 	@RequestMapping(value="/addpeer")
 	public ResponseEntity<String> postTest(@RequestBody Peer newPeer){
 		peerService.addPeer(newPeer);
 		return ResponseEntity.ok("added");
+	}
+	@RequestMapping(value="/node")
+	public ResponseEntity<String> getNodeUrl() throws Exception{		
+		return ResponseEntity.ok(peerService.getFullUrl());
 	}
 }
