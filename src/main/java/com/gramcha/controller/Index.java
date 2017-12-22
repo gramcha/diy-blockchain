@@ -33,7 +33,7 @@ public class Index {
 	public ResponseEntity<BlockChainList> getBlockChain() throws Exception{		
 		return ResponseEntity.ok(blockChainService.getBlockChain());
 	}
-	@RequestMapping(value="/addTransaction")
+	@RequestMapping(value="/addtransaction")
 	public ResponseEntity<String> postTest(@RequestBody Transaction transaction){
 		return ResponseEntity.ok(transaction.toString());
 	}
