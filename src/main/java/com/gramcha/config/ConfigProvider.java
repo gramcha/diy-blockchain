@@ -26,6 +26,10 @@ public class ConfigProvider {
 	public String getPortNumber() {
 		return env.getProperty("server.port");
 	}
+	
+	public String getOrchestratorUrl() {
+		return env.getProperty("OrchestratorUrl");
+	}
 
 	@Override
 	public String toString() {
@@ -34,6 +38,8 @@ public class ConfigProvider {
 		builder.append(isOrchestrator());
 		builder.append(", getPortNumber()=");
 		builder.append(getPortNumber());
+		builder.append(", getOrchestratorUrl()=");
+		builder.append(getOrchestratorUrl());
 		builder.append("]");
 		return builder.toString();
 	}

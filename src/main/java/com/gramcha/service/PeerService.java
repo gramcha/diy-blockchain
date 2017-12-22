@@ -10,8 +10,11 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.gramcha.config.ConfigProvider;
 import com.gramcha.entities.Peer;
@@ -22,6 +25,20 @@ public class PeerService {
 	@Autowired
 	ConfigProvider env;
 	private PeerList peerList = new PeerList();
+
+	@PostConstruct
+	void init() throws SocketException, UnknownHostException {
+		if (false == env.isOrchestrator()) {
+			String orchestratorUrl = env.getOrchestratorUrl();
+			RestTemplate restTemplate = new RestTemplate();
+			String targetUrl = orchestratorUrl + "addpeer";
+			Peer node = new Peer();
+			node.setId("some id");// set uuid
+			node.setUrl(getFullUrl());
+			String orchestratorResponse = restTemplate.postForObject(targetUrl, node, String.class);
+			System.out.println(orchestratorResponse);
+		}
+	}
 
 	public PeerList getPeerList() {
 		return peerList;
@@ -42,16 +59,18 @@ public class PeerService {
 
 	public String getThisNodeIpAddress() throws SocketException, UnknownHostException {
 		String ipAddress;
-		try(final DatagramSocket socket = new DatagramSocket()){
-			  socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-			  ipAddress = socket.getLocalAddress().getHostAddress();
-			}
+		try (final DatagramSocket socket = new DatagramSocket()) {
+			socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			ipAddress = socket.getLocalAddress().getHostAddress();
+		}
 		return ipAddress;
 	}
+
 	public String getThisNodePortNumber() {
 		return env.getPortNumber();
 	}
+
 	public String getFullUrl() throws SocketException, UnknownHostException {
-		return "http://"+getThisNodeIpAddress()+":"+getThisNodePortNumber()+"/";
+		return "http://" + getThisNodeIpAddress() + ":" + getThisNodePortNumber() + "/";
 	}
 }
