@@ -9,6 +9,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.gramcha.config.ConfigProvider;
+import com.gramcha.entities.Block;
+import com.gramcha.entities.BlockChainList;
 import com.gramcha.entities.Peer;
 import com.gramcha.entities.PeerList;
 
@@ -72,5 +75,19 @@ public class PeerService {
 
 	public String getFullUrl() throws SocketException, UnknownHostException {
 		return "http://" + getThisNodeIpAddress() + ":" + getThisNodePortNumber() + "/";
+	}
+
+	public void sendBlockChainList(BlockChainList chainList) {
+		for (Peer peer : peerList.getPeers()) {
+			
+			RestTemplate restTemplate = new RestTemplate();
+			String targetUrl = peer.getUrl() + "broadcast";
+			System.out.println("********");
+			System.out.println(targetUrl);
+			System.out.println(chainList);
+			System.out.println("********");
+			String orchestratorResponse = restTemplate.postForObject(targetUrl, chainList, String.class);
+			System.out.println(orchestratorResponse);
+		}
 	}
 }

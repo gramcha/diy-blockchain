@@ -56,6 +56,54 @@ public class Block {
 	public String getBlockHash() {
 		return blockHash;
 	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((blockHash == null) ? 0 : blockHash.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((previousBlockHash == null) ? 0 : previousBlockHash.hashCode());
+		result = prime * result + ((timeStamp == null) ? 0 : timeStamp.hashCode());
+		result = prime * result + ((transactionData == null) ? 0 : transactionData.hashCode());
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Block other = (Block) obj;
+		if (blockHash == null) {
+			if (other.blockHash != null)
+				return false;
+		} else if (!blockHash.equals(other.blockHash))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (previousBlockHash == null) {
+			if (other.previousBlockHash != null)
+				return false;
+		} else if (!previousBlockHash.equals(other.previousBlockHash))
+			return false;
+		if (timeStamp == null) {
+			if (other.timeStamp != null)
+				return false;
+		} else if (!timeStamp.equals(other.timeStamp))
+			return false;
+		if (transactionData == null) {
+			if (other.transactionData != null)
+				return false;
+		} else if (!transactionData.equals(other.transactionData))
+			return false;
+		return true;
+	}
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();

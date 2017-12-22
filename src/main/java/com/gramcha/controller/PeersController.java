@@ -32,4 +32,5 @@ public class PeersController {
 	public ResponseEntity<String> getNodeUrl() throws Exception{		
 		return ResponseEntity.ok(peerService.getFullUrl());
 	}
+	
 }

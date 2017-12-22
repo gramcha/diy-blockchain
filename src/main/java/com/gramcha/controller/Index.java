@@ -34,8 +34,16 @@ public class Index {
 		return ResponseEntity.ok(blockChainService.getBlockChain());
 	}
 	@RequestMapping(value="/addtransaction")
-	public ResponseEntity<String> postTest(@RequestBody Transaction transaction){
-		return ResponseEntity.ok(transaction.toString());
+	public ResponseEntity<Block> postTransaction(@RequestBody Transaction transaction) throws Exception{
+		blockChainService.addTransaction(transaction);
+		return ResponseEntity.ok(blockChainService.addTransaction(transaction));
 	}
-	
+	@RequestMapping(value="/broadcast")
+	public ResponseEntity<Object> broadcastBlockChain(@RequestBody BlockChainList blockChainList) throws Exception{
+		return ResponseEntity.ok(blockChainService.handleBroadCastChain(blockChainList));
+	}
+	@RequestMapping(value="/broadcasttoothers")
+	public ResponseEntity<Object> broadcastBlockChainToOthers(@RequestBody String req){
+		return ResponseEntity.ok(blockChainService.handleBroadCastChainToOthers(req));
+	}
 }
