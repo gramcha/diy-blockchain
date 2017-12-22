@@ -32,11 +32,14 @@ public class Block {
 		
 		this.blockHash = calculateBlockHash(id, previousBlockHash, transactionData, timeStamp);
 	}
-	private String calculateBlockHash(Integer id, String previousBlockHash, Object transactionData, String timeStamp)
+	private static String calculateBlockHash(Integer id, String previousBlockHash, Object transactionData, String timeStamp)
 			throws NoSuchAlgorithmException {
 		MessageDigest digest = MessageDigest.getInstance("SHA-256");
 		byte[] hash = digest.digest((id+previousBlockHash+transactionData+timeStamp).getBytes());
 		return Base64.getEncoder().encodeToString(hash);
+	}
+	public static String calculateHash(Block block) throws NoSuchAlgorithmException {
+		return calculateBlockHash(block.getId(), block.getPreviousBlockHash(), block.getTransactionData(), block.getTimeStamp());
 	}
 	public Integer getId() {
 		return id;
