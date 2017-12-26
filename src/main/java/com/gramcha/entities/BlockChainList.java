@@ -18,6 +18,9 @@ public class BlockChainList {
 		this.data = data;
 	}
 
+	public void addBlockToList(Block item) {
+		data.add(item);
+	}
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
