@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.gramcha.entities.BlockChainList;
 import com.gramcha.entities.Peer;
 import com.gramcha.entities.PeerList;
 import com.gramcha.service.PeerService;
@@ -24,9 +25,8 @@ public class PeersController {
 		return ResponseEntity.ok(peerService.getPeerList());
 	}
 	@RequestMapping(value="/addpeer")
-	public ResponseEntity<String> postTest(@RequestBody Peer newPeer){
-		peerService.addPeer(newPeer);
-		return ResponseEntity.ok("added");
+	public ResponseEntity<BlockChainList> addPeer(@RequestBody Peer newPeer){
+		return ResponseEntity.ok(peerService.addPeer(newPeer));
 	}
 	@RequestMapping(value="/node")
 	public ResponseEntity<String> getNodeUrl() throws Exception{		

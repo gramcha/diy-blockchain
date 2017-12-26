@@ -9,7 +9,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.List;
 
 import javax.annotation.PostConstruct;
 
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.gramcha.config.ConfigProvider;
-import com.gramcha.entities.Block;
 import com.gramcha.entities.BlockChainList;
 import com.gramcha.entities.Peer;
 import com.gramcha.entities.PeerList;
@@ -28,7 +26,9 @@ public class PeerService {
 	@Autowired
 	ConfigProvider env;
 	private PeerList peerList = new PeerList();
-
+	@Autowired
+	BlockChainServiceData data;
+	
 	@PostConstruct
 	void init() throws SocketException, UnknownHostException {
 		if (false == env.isOrchestrator()) {
@@ -38,8 +38,10 @@ public class PeerService {
 			Peer node = new Peer();
 			node.setId("some id");// set uuid
 			node.setUrl(getFullUrl());
-			String orchestratorResponse = restTemplate.postForObject(targetUrl, node, String.class);
-			System.out.println(orchestratorResponse);
+			System.out.println("before orc update - "+data.getChainList().getData());
+			BlockChainList orchestratorResponse = restTemplate.postForObject(targetUrl, node, BlockChainList.class);
+			data.updateBlockChainData(orchestratorResponse.getData());
+			System.out.println("after orc update - "+data.getChainList().getData());
 		}
 	}
 
@@ -47,8 +49,9 @@ public class PeerService {
 		return peerList;
 	}
 
-	public void addPeer(Peer newPeer) {
+	public BlockChainList addPeer(Peer newPeer) {
 		peerList.add(newPeer);
+		return data.getChainList();
 	}
 
 	@Override
@@ -77,17 +80,26 @@ public class PeerService {
 		return "http://" + getThisNodeIpAddress() + ":" + getThisNodePortNumber() + "/";
 	}
 
-	public void sendBlockChainList(BlockChainList chainList) {
-		for (Peer peer : peerList.getPeers()) {
-			
-			RestTemplate restTemplate = new RestTemplate();
+	public void sendBlockChainListToOtherPeers(BlockChainList chainList) {
+		peerList.getPeers().forEach((url,peer)->{
 			String targetUrl = peer.getUrl() + "broadcast";
-			System.out.println("********");
-			System.out.println(targetUrl);
-			System.out.println(chainList);
-			System.out.println("********");
-			String orchestratorResponse = restTemplate.postForObject(targetUrl, chainList, String.class);
-			System.out.println(orchestratorResponse);
-		}
+			String peerResponse = sendToSpecificPeer(chainList, targetUrl);
+			System.out.println(peerResponse);
+			});
 	}
+
+	private String sendToSpecificPeer(BlockChainList chainList, String targetUrl) {
+		RestTemplate restTemplate = new RestTemplate();
+		System.out.println("********");
+		System.out.println(targetUrl);
+		System.out.println("********");
+		return restTemplate.postForObject(targetUrl, chainList, String.class);
+	}
+	public void sendBlockChainListToOrchestrator(BlockChainList chainList) {
+		RestTemplate restTemplate = new RestTemplate();
+		String targetUrl = env.getOrchestratorUrl() + "broadcast";
+		String orchestratorResponse = sendToSpecificPeer(chainList, targetUrl);
+		System.out.println(orchestratorResponse);
+	}
+	
 }
