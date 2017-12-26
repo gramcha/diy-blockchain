@@ -33,9 +33,9 @@ public class Index {
 	public ResponseEntity<BlockChainList> getBlockChain() throws Exception{		
 		return ResponseEntity.ok(blockChainService.getBlockChain());
 	}
-	@RequestMapping(value="/addtransaction")
+	@RequestMapping(value="/transaction")
 	public ResponseEntity<Block> postTransaction(@RequestBody Transaction transaction) throws Exception{
-		blockChainService.addTransaction(transaction);
+		System.out.println("/transaction endpoint...."+ transaction);
 		return ResponseEntity.ok(blockChainService.addTransaction(transaction));
 	}
 	@RequestMapping(value="/broadcast")
