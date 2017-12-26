@@ -5,19 +5,17 @@
  */
 package com.gramcha.entities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PeerList {
-	private List<Peer> peers= new ArrayList<>();
+	private Map<String,Peer> peers= new HashMap<>();
 
-	public List<Peer> getPeers() {
+	public Map<String,Peer> getPeers() {
 		return peers;
 	}
 	public void add(Peer newPeer) {
-		peers.add(newPeer);
+		peers.put(newPeer.getUrl(), newPeer);
 	}
 	@Override
 	public String toString() {
