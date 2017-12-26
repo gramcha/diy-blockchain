@@ -24,6 +24,7 @@ import com.gramcha.config.ConfigProvider;
 import com.gramcha.entities.Block;
 import com.gramcha.entities.BlockChainList;
 import com.gramcha.entities.Peer;
+import com.gramcha.entities.Transaction;
 
 @Service
 public class BlockChainService {
@@ -31,51 +32,43 @@ public class BlockChainService {
 	ConfigProvider env;
 	@Autowired
 	PeerService peerService;
-	BlockChainList chainList = new BlockChainList();
-	List<Block> theBlockChain = new ArrayList<>();
-
-	@PostConstruct
-	void InitChain() throws NoSuchAlgorithmException {
-		theBlockChain.add(getGenesisBlock());
-		chainList.setData(theBlockChain);
-	}
-
+	@Autowired
+	BlockChainServiceData data;
+	
 	public BlockChainList getBlockChain() {
-		return chainList;
+		return data.getChainList();
 	}
 
-	public Block addTransaction(Object transactionData) throws Exception {
+	public Block addTransaction(Transaction transactionData) throws Exception {
 		Block newBlock = createNextBlock(transactionData);
-		if (isValidNewBlock(newBlock))
-			theBlockChain.add(newBlock);
-		else
+		if (isValidNewBlock(newBlock)) {
+			System.out.println("before transaction = "+data.getChainList());
+			data.add(newBlock);
+			System.out.println("after transaction = "+data.getChainList());
+			new Thread(() -> {
+				handleBroadCastChainToOthers("queryallnodes");
+			}).start();
+		} else
 			System.out.println("newblock is invalid!!!");
-		new Thread(() -> {
-			handleBroadCastChainToOthers("queryallnodes");
-		}).start();
 		return newBlock;
-	}
-
-	Block getGenesisBlock() throws NoSuchAlgorithmException {
-		return new Block(0, null, "Genesis Block - First transaction 0", null);
 	}
 
 	private String getTimeStamp() {
 		return new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss.SSS").format(new Date());
 	}
 
-	private Block createNextBlock(Object transactionData) throws Exception {
+	private Block createNextBlock(Transaction transactionData) throws Exception {
 		Block previousBlock = getLastBlock();
-		return new Block(previousBlock.getId() + 1, previousBlock.getBlockHash(), transactionData, getTimeStamp());
+		return new Block(previousBlock.getId() + 1, previousBlock.getBlockHash(), transactionData.getData(), getTimeStamp());
 	}
 
 	private Block getLastBlock() throws Exception {
-		return getLastBlock(this.theBlockChain);
+		return getLastBlock(this.data.getTheBlockChain());
 	}
 
 	private Block getLastBlock(List<Block> blockChainList) throws Exception {
-		if (false == CollectionUtils.isEmpty(theBlockChain)) {
-			return blockChainList.get(theBlockChain.size() - 1);
+		if (false == CollectionUtils.isEmpty(blockChainList)) {
+			return blockChainList.get(blockChainList.size() - 1);
 		}
 		throw new Exception("genesis block missing !!!");
 	}
@@ -86,6 +79,19 @@ public class BlockChainService {
 
 	private Boolean isValidNewBlock(Block newBlock, Block previousBlock) throws Exception {
 
+		if(previousBlock.getId() + 1 != newBlock.getId()) {
+			System.out.println("block id mismatch");
+		} else if(false == newBlock.getPreviousBlockHash().equals(previousBlock.getBlockHash())) {
+			System.out.println("previous hash mismatch");
+		} else if(false == newBlock.getBlockHash().equals(Block.calculateHash(newBlock))) {
+			System.out.println("*******");
+			System.out.println("new block hash calc mismatch");
+			System.out.println("newBlock = "+newBlock);
+			System.out.println("newBlock.getBlockHash() = "+newBlock.getBlockHash());
+			System.out.println("Block.calculateHash = "+Block.calculateHash(newBlock));
+			System.out.println("Block.calculateBlockHash()= "+Block.calculateBlockHash(newBlock.getId(),newBlock.getPreviousBlockHash(),newBlock.getTransactionData(),newBlock.getTimeStamp()));
+			System.out.println("*******");
+		}
 		return previousBlock.getId() + 1 == newBlock.getId()
 				&& newBlock.getPreviousBlockHash().equals(previousBlock.getBlockHash())
 				&& newBlock.getBlockHash().equals(Block.calculateHash(newBlock));
@@ -96,35 +102,54 @@ public class BlockChainService {
 		Collections.sort(receivedList, Comparator.comparingInt(Block::getId));
 		Block lastBlockOfReceivedList = getLastBlock(receivedList);
 		Block lastBlockofThisNode = getLastBlock();
+		System.out.println("lastBlockOfReceivedList -"+lastBlockOfReceivedList.getId());
+		System.out.println("lastBlockofThisNode -"+lastBlockofThisNode.getId());
 		if (lastBlockOfReceivedList.getId() > lastBlockofThisNode.getId()) {
 			if (lastBlockofThisNode.getBlockHash().equals(lastBlockOfReceivedList.getPreviousBlockHash())) {
-				theBlockChain.add(lastBlockOfReceivedList);
+				data.add(lastBlockOfReceivedList);
+				System.out.println("new block added");
+				new Thread(() -> {
+					handleBroadCastChainToOthers("queryallnodes");
+				}).start();
 			}
 		} else if (receivedList.size() == 1) {
 			broadcastRequestToOrchestrator();
+			System.out.println("broadcastRequestToOrchestrator");
 		} else {
+			System.out.println("update chain");
 			updateChain(receivedList);
 		}
 		return null;
 	}
 
 	private void updateChain(List<Block> receivedList) throws Exception {
-		if(isValidChain(receivedList) && receivedList.size() > theBlockChain.size()) {
-			theBlockChain = receivedList;
-			chainList.setData(theBlockChain);
+		if(isValidChain(receivedList) && receivedList.size() > data.getTheBlockChain().size()) {
+			System.out.println("chain updation happening...");
+			data.updateBlockChainData(data.getTheBlockChain());
+			new Thread(() -> {
+				handleBroadCastChainToOthers("queryallnodes");
+			}).start();
+		} else {
+			System.out.println("invlaid chain or size less than current chain");
 		}
 	}
 
 	private Boolean isValidChain(List<Block> receivedList) throws Exception {
 		Block item = receivedList.get(0);
-		if (item.equals(getGenesisBlock()))
+		System.out.println("recvd genesis block -"+item);
+		Block genesisblock = data.getGenesisBlock();
+		System.out.println("this genesis block -"+genesisblock);
+		if (false == item.equals(genesisblock)) {
+			System.out.println("genesis check failed");
 			return false;
+		}
 		List<Block> tlist = new ArrayList<>();
 		tlist.add(item);
 		for (int i = 1; i < receivedList.size(); i++) {
 			if (isValidNewBlock(receivedList.get(i), tlist.get(i - 1))) {
 				tlist.add(receivedList.get(i));
 			} else {
+				System.out.println("invalid block" +"received block ("+receivedList.get(i)+")"+" != tlist ("+tlist.get(i - 1)+")");
 				return false;
 			}
 		}
@@ -142,13 +167,15 @@ public class BlockChainService {
 		}
 	}
 
-	/**
-	 * @param req
-	 * @return
-	 */
 	public Object handleBroadCastChainToOthers(String req) {
 		if (true == env.isOrchestrator()) {
-			peerService.sendBlockChainList(this.chainList);
+			System.out.println("sending list from orchestrator to others...");
+			System.out.println("chain = "+this.data.getChainList());
+			peerService.sendBlockChainListToOtherPeers(this.data.getChainList());
+		} else {
+			System.out.println("sending list to orchestrator...");
+			System.out.println("chain = "+this.data.getChainList());
+			peerService.sendBlockChainListToOrchestrator(this.data.getChainList());
 		}
 		return null;
 	}
